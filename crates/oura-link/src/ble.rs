@@ -86,6 +86,9 @@ pub async fn scan(name_contains: &str, timeout: Duration) -> Result<Vec<Discover
             if !name_matches(&name, name_contains) {
                 continue;
             }
+            let Some(rssi) = props.rssi else {
+                continue;
+            };
             let id = p.id().to_string();
             let entry = Discovered {
                 id: id.clone(),
@@ -94,7 +97,7 @@ pub async fn scan(name_contains: &str, timeout: Duration) -> Result<Vec<Discover
                 } else {
                     name
                 },
-                rssi: props.rssi.unwrap_or(i16::MIN),
+                rssi,
             };
             match found.iter_mut().find(|d| d.id == id) {
                 Some(existing) => *existing = entry,
@@ -141,7 +144,9 @@ impl BleTransport {
                         continue;
                     }
                 }
-                let rssi = props.rssi.unwrap_or(i16::MIN);
+                let Some(rssi) = props.rssi else {
+                    continue;
+                };
                 if chosen.as_ref().map(|(_, r)| rssi > *r).unwrap_or(true) {
                     chosen = Some((p, rssi));
                 }
